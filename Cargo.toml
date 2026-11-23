@@ -1,0 +1,69 @@
+[package]
+name = "converter-studio"
+version = "1.0.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Official Rust client for the Converter Studio file conversion API: convert HEIC photos, videos, audio, documents, e-books and more (67 formats) from async or blocking Rust."
+license = "MIT"
+authors = ["Converter Studio <support@converter.studio>"]
+homepage = "https://converter.studio"
+documentation = "https://docs.rs/converter-studio"
+repository = "https://github.com/tariksucu/converter-studio-rust"
+readme = "README.md"
+keywords = ["file-conversion", "converter", "heic", "video", "api-client"]
+categories = [
+    "api-bindings",
+    "multimedia",
+    "web-programming::http-client",
+    "command-line-utilities",
+]
+include = [
+    "/src/**/*.rs",
+    "/examples/**/*.rs",
+    "/Cargo.toml",
+    "/README.md",
+    "/CHANGELOG.md",
+    "/LICENSE",
+]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = []
+# A blocking client (`converter_studio::blocking`) that runs the async one on its own runtime.
+blocking = ["tokio/rt", "tokio/net"]
+# The `converter-studio` command (`cargo install converter-studio --features cli`).
+cli = ["blocking"]
+
+[dependencies]
+bytes = "1.4"
+futures-util = { version = "0.3.28", default-features = false }
+reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "stream"] }
+serde = { version = "1.0.190", features = ["derive"] }
+serde_json = "1.0.100"
+tokio = { version = "1.43", features = ["fs", "io-util", "time"] }
+
+[dev-dependencies]
+tokio = { version = "1.43", features = ["macros", "rt-multi-thread"] }
+# 0.6.5 needs Rust 1.88 (let chains); Cargo.lock keeps 0.6.4 so that the tests run on the MSRV.
+wiremock = "0.6.4"
+
+[[bin]]
+name = "converter-studio"
+path = "src/bin/converter-studio.rs"
+required-features = ["cli"]
+
+[lints.rust]
+missing_docs = "warn"
+unsafe_code = "forbid"
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(docsrs)"] }
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+# Product names in prose (FFmpeg, OneDrive...) are not code.
+doc_markdown = "allow"
+missing_errors_doc = "allow"
+must_use_candidate = "allow"

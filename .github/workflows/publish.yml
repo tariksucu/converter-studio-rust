@@ -1,0 +1,66 @@
+name: Publish
+
+# Publishes the crate to crates.io when a version tag (v1.2.3) is pushed. docs.rs builds the
+# documentation on its own once the version is on crates.io.
+#
+# Authentication, in this order:
+# - Trusted publishing (no stored secret): set the repository variable
+#   CRATES_IO_TRUSTED_PUBLISHING to "true" once the crate's Settings on crates.io trust this
+#   repository, this workflow (publish.yml) and the environment "crates-io". crates.io allows
+#   this only after the first version has been published.
+# - Otherwise the repository secret CARGO_REGISTRY_TOKEN (a crates.io API token with the
+#   publish-new and publish-update scopes), for the first version.
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    environment: crates-io
+    permissions:
+      contents: read
+      # Trusted publishing: GitHub's OIDC token is exchanged for a short-lived crates.io token.
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+
+      - name: The tag matches the crate's version
+        run: |
+          version="$(cargo metadata --no-deps --format-version 1 | python3 -c 'import json, sys; print(json.load(sys.stdin)["packages"][0]["version"])')"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "The tag is $GITHUB_REF_NAME but Cargo.toml says $version." >&2
+            exit 1
+          fi
+
+      - name: Tests
+        run: cargo test --locked --all-features
+
+      - name: Get a short-lived crates.io token (trusted publishing)
+        id: auth
+        if: vars.CRATES_IO_TRUSTED_PUBLISHING == 'true'
+        uses: rust-lang/crates-io-auth-action@v1
+
+      - name: Publish
+        run: cargo publish --locked
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token || secrets.CARGO_REGISTRY_TOKEN }}

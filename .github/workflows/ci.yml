@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  pull_request:
+    paths-ignore:
+      - '**.md'
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+
+# Cancel in-progress runs for the same branch/PR.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint:
+    name: rustfmt, Clippy, docs and package
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Rust (stable, and nightly for the docs.rs build)
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt,clippy
+          rustup toolchain install nightly --profile minimal
+          rustup default stable
+
+      - name: rustfmt
+        run: cargo fmt --check
+
+      - name: Clippy
+        run: |
+          cargo clippy --locked --all-targets --all-features -- -D warnings
+          cargo clippy --locked --all-targets --no-default-features -- -D warnings
+
+      # docs.rs builds with nightly, every feature and --cfg docsrs (Cargo.toml).
+      - name: Docs as docs.rs builds them
+        run: cargo +nightly doc --locked --all-features --no-deps
+        env:
+          RUSTDOCFLAGS: --cfg docsrs -D warnings
+
+      - name: Package
+        run: |
+          cargo package --locked --list
+          cargo publish --locked --dry-run
+
+  test:
+    name: Tests (Rust ${{ matrix.rust }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # The latest stable release and the minimum supported one (rust-version in Cargo.toml).
+        os: [ubuntu-latest]
+        rust: [stable, '1.85']
+        include:
+          - os: windows-latest
+            rust: stable
+          - os: macos-latest
+            rust: stable
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Rust ${{ matrix.rust }}
+        run: |
+          rustup toolchain install ${{ matrix.rust }} --profile minimal
+          rustup default ${{ matrix.rust }}
+
+      # Unit tests against a fake API (wiremock), the command's tests and the doc examples:
+      # no network, no API key.
+      - name: Tests (every feature)
+        run: cargo test --locked --all-features
+
+      - name: Tests (no feature)
+        run: cargo test --locked --no-default-features --lib
