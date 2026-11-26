@@ -4,6 +4,13 @@ All notable changes to this crate are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the crate uses
 [semantic versioning](https://semver.org/) (tags `vX.Y.Z`).
 
+## 1.0.1 - unreleased
+
+- README (also the crate's page on crates.io): a note in "Command line" on the two commands named
+  `converter-studio`. This crate's uploads every file to converter.studio; the desktop app's
+  converts on the computer and uses the cloud only with `--cloud`. The one first on `PATH` runs;
+  `~/.cargo/bin/converter-studio` always runs this crate's. No change in behaviour.
+
 ## 1.0.0 - 2026-11-23
 
 The first release.

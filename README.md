@@ -265,6 +265,16 @@ $ converter-studio account
 usage, 3 no API key or a key that does not work, 4 not enough credits or a price over
 `--max-credits`, 5 a conversion that did not finish within `--timeout`.
 
+> **Two commands are named `converter-studio`.** This crate's command uploads every file to
+> converter.studio and converts it there, with your API key and credits. The command that
+> [Converter Studio for desktop](https://converter.studio/download) installs converts on your
+> computer and uses the cloud only with `--cloud`. If you have both, the one that comes first on
+> your `PATH` runs; `converter-studio --help` tells them apart (the desktop app's begins with
+> "Convert files on this computer"). Cargo puts this crate's command in `~/.cargo/bin`
+> (`%USERPROFILE%\.cargo\bin` on Windows), so `~/.cargo/bin/converter-studio` always runs it. To
+> run the desktop app's, call it by its full path: `which -a converter-studio` (macOS, Linux) or
+> `where.exe converter-studio` (Windows) lists every one, first one first.
+
 ## Limits
 
 - The largest file depends on the plan (`account.max_file_bytes`). One request carries up to

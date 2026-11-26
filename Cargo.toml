@@ -1,6 +1,6 @@
 [package]
 name = "converter-studio"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2024"
 rust-version = "1.85"
 description = "Official Rust client for the Converter Studio file conversion API: convert HEIC photos, videos, audio, documents, e-books and more (67 formats) from async or blocking Rust."
